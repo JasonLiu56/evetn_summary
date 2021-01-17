@@ -40,44 +40,53 @@ def get_hot_keywords():
 def crawl_by_keyword(keyword):
     # 抽取标题和链接
     print("开始keyword:{}爬虫工作".format(keyword))
-    titles, urls = extract_news_urls(keyword)
-    # 随机休眠，避免被禁止爬取工作
-    time.sleep(random.randint(3, 10))
+    # 贴吧帖子urls
+    tiezi_urls = []
+    for page in range(1,4):
+        tmp_urls = extract_news_urls(keyword, page)
+        if tmp_urls is not None:
+            tiezi_urls += tmp_urls
+        # 随机休眠，避免被禁止爬取工作
+        time.sleep(random.randint(3, 10))
 
-    if titles is not None and urls is not None:
+    if len(tiezi_urls) > 0:
         res_list = []
 
         # 遍历爬取url
-        for url in urls:
-            res = extract_news_detail(url)
-            print(res)
-            # 有数据则添加
-            if res is not None:
-                res_list.append(res)
+        for url in tiezi_urls:
+            tmp_list = extract_news_detail(url)
+            if tmp_list is not None and len(tmp_list) > 0:
+                res_list += tmp_list
+                print(tmp_list)
             time.sleep(random.randint(3, 10))
 
         # 保存数据
         print("keyword:{}保存数据".format(keyword))
-        save_data(keyword, titles, res_list)
+        save_data(keyword, res_list)
 
 
 # 保存数据
-def save_data(keyword, titles, res_list):
+def save_data(keyword, res_list):
     # 根据关键词创建对应目录
-    save_dir = os.path.join(data_dir, replace_exp(keyword))
+    save_dir = os.path.join(data_dir)
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
-    # 遍历 titles, res_list
-    for title, res in zip(titles, res_list):
-        save_file = os.path.join(save_dir, '{}.txt'.format(replace_exp(title)))
-        # 如果res['content']为None不保存 或者res['content']长度太短
-        if res['content'] is None or len(res['content']) < 10:
-            continue
+    write_res_list = []
+    for res in res_list:
+        res = res.strip()
+        line_list = [line.strip() for line in res.split("。")]
+        write_res_list += line_list
 
-        # 保存数据
-        with open(save_file, mode='a', encoding='utf-8') as fw:
-            fw.write(res['content'] + "\n")
+    # 保存文件路径
+    save_file = os.path.join(save_dir, '{}.txt'.format(replace_exp(keyword)))
+
+    # 保存数据
+    with open(save_file, mode='a', encoding='utf-8') as fw:
+        for line in write_res_list:
+            if len(line) < 5: continue
+            line = line.replace('\r', '').replace('\n', '')
+            fw.write(line + "\n")
 
 
 # 爬虫主函数

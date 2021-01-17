@@ -1,5 +1,4 @@
 requests
-scrapy
 lxml
 fake-useragent
 gerapy-auto-extractor
@@ -7,3 +6,5 @@ cchardet
 gensim
 pyltp
 textrank4zh
+pandas
+sentence_transformers

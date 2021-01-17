@@ -2,7 +2,8 @@ import os
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from utils.text import get_stopwords, read_single_article
+from utils.text import get_stopwords, format_multi_article
+from settings import data_dir
 
 
 # 计算句子和文本之间的相似度(tfidf方式)
@@ -40,13 +41,12 @@ def calculate_each_sentence_similarity_tfidf(clean_sentences):
 
 
 # mmr tfidf 文本摘要
-def mmr_summarization_tfidf(sentences, clean_sentences, scores, summarization_ratio=0.2, alpha=0.5):
+def mmr_summarization_tfidf(sentences, clean_sentences, scores, sim_ration=0.15, alpha=0.7):
     # 摘要选取的句子长度
-    sentence_len = int(len(sentences) * summarization_ratio)
     clean_summary = []
     summary = []
 
-    while sentence_len > 0:
+    while True:
         mmr = np.zeros(shape=len(sentences))
         index = 0
 
@@ -56,26 +56,23 @@ def mmr_summarization_tfidf(sentences, clean_sentences, scores, summarization_ra
                 # print(calculate_similarity_tfidf(sentence, clean_summary))
                 mmr[index] = alpha * score - (1 - alpha) * calculate_similarity_tfidf(sentence, clean_summary)
             index += 1
-
         selected = np.argmax(mmr)
+        if mmr[selected] < sim_ration: break
         print("sentence:{}\tscore:{}".format(sentences[selected], mmr[selected]))
         clean_summary.append(clean_sentences[selected])
         summary.append(sentences[selected])
-
-        sentence_len -= 1
 
     return summary
 
 
 if __name__ == '__main__':
     stopwords = get_stopwords()
-    sentences, clean_sentences = [], []
-    for file in os.listdir("G:/code/python/mashup/data/不建议同时接种新冠疫苗和HPV疫苗"):
-        single_sentences, single_clean_sentences = read_single_article(os.path.join("G:/code/python/mashup/data/不建议同时接种新冠疫苗和HPV疫苗", file), stopwords)
-        sentences += single_sentences
-        clean_sentences += single_clean_sentences
-
-    if len(sentences) > 10:
-        scores = calculate_each_sentence_similarity_tfidf(clean_sentences)
-        summary = mmr_summarization_tfidf(sentences, clean_sentences, scores)
-    # print(summary)
+    for file in os.listdir(data_dir):
+        file = os.path.join(data_dir, file)
+        with open(file, 'r', encoding='utf-8') as fr:
+            sentences = fr.readlines()
+            clean_sentences = format_multi_article(sentences, stopwords)
+            scores = calculate_each_sentence_similarity_tfidf(clean_sentences)
+            summary = mmr_summarization_tfidf(sentences, clean_sentences, scores)
+            print("keyword:{}".format(file))
+            print(summary)
