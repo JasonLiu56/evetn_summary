@@ -12,7 +12,7 @@ def filter_tilte(line):
 
 # 函数, 过滤掉“\:：*？<>!！”, 路径不能包含相关字符，否则报错
 def replace_exp(str):
-    return re.sub(r'[\:：*？?<>!！|\\"\\"]', '', str)
+    return re.sub(r'[:：*？?<>!！|\\"\\"]', '', str)
 
 
 # 获取停用词表
@@ -52,3 +52,10 @@ def format_multi_article(sentences, stopwords=None):
 
     return clean_sentences
 
+
+# 简单字面计算相似度
+def compute_sentence_pair_sim(sentence1, sentence2):
+    set1 = set(jieba.lcut(sentence1))
+    set2 = set(jieba.lcut(sentence2))
+    inter_set = set1.intersection(set2)
+    return len(inter_set) / min(len(set1), len(set2))

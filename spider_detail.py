@@ -3,9 +3,11 @@ import requests
 import cchardet
 from lxml import etree
 from datetime import datetime
+from utils.text import compute_sentence_pair_sim
 from sklearn.metrics.pairwise import cosine_similarity
 from settings import baidu_tieba_url, headers
 from utils.text_bert import sentence_model
+from utils.logger import logger
 
 
 # 构造帖子url
@@ -14,9 +16,10 @@ def build_url(url):
 
 
 # 抽取百度贴吧url
-def extract_news_urls(keyword, page=1):
-    res_urls = None
+def extract_tieba_urls(keyword, page=1):
+    res_urls, tiezi_titles = None, None
     try:
+        logger.info("正在爬取贴吧:{}相关数据, page={}".format(keyword, page))
         response = requests.get(url=baidu_tieba_url.format(keyword, page), headers=headers)
         detect_encoding = cchardet.detect(response.content)['encoding']
         response.encoding = detect_encoding
@@ -40,29 +43,30 @@ def extract_news_urls(keyword, page=1):
                 now = datetime.now()
                 if (now - date).days > 15:
                     continue
-                print(date)
                 tiezi_urls.append(item_url)
                 tiezi_titles.append(item_title.strip())
 
         res_urls = []
-        keyword_vector = sentence_model.encode(keyword).reshape(1,-1)
+        res_titles = []
         # 通过keyword和文章title相似度超过0.5才通过
         for tiezi_url, tiezi_title in zip(tiezi_urls, tiezi_titles):
-            tiezi_vector = sentence_model.encode(tiezi_title).reshape(1,-1)
-            sim = cosine_similarity(keyword_vector, tiezi_vector)[0][0]
-            if sim > 0.55:
+            sim = compute_sentence_pair_sim(keyword, tiezi_title)
+            # 过滤相似度比较低的url
+            if sim > 0.5:
                 tiezi_url = build_url(tiezi_url)
                 res_urls.append(tiezi_url)
+                res_titles.append(tiezi_title)
     except Exception as e:
-        print(str(e))
+        logger.error(str(e))
 
-    return res_urls
+    return res_urls, res_titles
 
 
-# 抽取具体资讯页
-def extract_news_detail(url):
+# 抽取贴吧详情页
+def extract_tieba_detail(url):
     res_list = []
     try:
+        logger.info("正在爬取贴吧详情页url:{}".format(url))
         response = requests.get(url=url, headers=headers)
         detect_encoding = cchardet.detect(response.content)['encoding']
         response.encoding = detect_encoding
@@ -79,6 +83,6 @@ def extract_news_detail(url):
                 res_list.append(tiezi_content)
 
     except Exception as e:
-        print(e)
+        logger.error(str(e))
 
     return res_list

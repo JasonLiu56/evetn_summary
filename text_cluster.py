@@ -1,11 +1,10 @@
 # 针对提取的数据进行聚类
 import os
-import jieba
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import TfidfVectorizer
 from settings import summary_dir
 from utils.text_bert import sentence_model
+from utils.logger import logger
 
 
 def get_max_similarity(dict_topic, vector):
@@ -21,7 +20,7 @@ def get_max_similarity(dict_topic, vector):
 
 
 # 文本聚类
-def text_cluster(texts, theta):
+def text_cluster(texts, theta=0.85):
     # 将文本转成向量集
     text_vectors = sentence_model.encode(texts)
 
@@ -29,7 +28,8 @@ def text_cluster(texts, theta):
     dict_topic = {}
     cluster_topic = {}
     num_topic = 0
-    cnt = 0
+
+    logger.info("正在进行文本聚类工作")
 
     for vector, text in zip(text_vectors, texts):
         if num_topic == 0:
@@ -50,11 +50,8 @@ def text_cluster(texts, theta):
                 cluster_topic[num_topic] = []
                 cluster_topic[num_topic].append(text)
                 num_topic += 1
-        cnt += 1
-        if cnt % 500 == 0:
-            print("processing {} ...".format(cnt))
 
-    return dict_topic, cluster_topic
+    return cluster_topic
 
 
 if __name__ == '__main__':

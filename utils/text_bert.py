@@ -35,7 +35,6 @@ def calculate_each_sentence_similarity_bert(title_vector, sentence_vectors):
 def mmr_summarization_bert(sentences, sentence_vectors, scores, title_vector, sim_ratio=0.10, alpha=0.7):
     # 摘要选取的句子长度
     summary, summary_idx = [sentences[np.argmax(scores)]], [np.argmax(scores)]
-    print(summary[0])
 
     while True:
         mmr = np.zeros(shape=len(sentences))
@@ -53,7 +52,7 @@ def mmr_summarization_bert(sentences, sentence_vectors, scores, title_vector, si
         if mmr[selected] < sim_ratio:
             break
 
-        print("sentence:{}\tscore:{}".format(sentences[selected], mmr[selected]))
+        # print("sentence:{}\tscore:{}".format(sentences[selected], mmr[selected]))
         summary.append(sentences[selected])
         summary_idx.append(selected)
 
